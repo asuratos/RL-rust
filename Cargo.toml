@@ -1,9 +1,10 @@
 [package]
-name = "RL-rust"
+name = "rust_rl"
 version = "0.1.0"
-authors = ["asuratos <suratos2017@sil.doshisha.ac.jp>"]
+authors = ["Aldrich Suratos <cyurio@gmail.com>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+rltk = { version = "0.8.0" }
