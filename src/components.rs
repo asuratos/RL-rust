@@ -23,3 +23,6 @@ pub struct Viewshed {
 
 #[derive(Component)]
 pub struct Player {}
+
+#[derive(Component, Debug)]
+pub struct Monster {}
