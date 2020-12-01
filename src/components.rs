@@ -8,6 +8,11 @@ pub struct Position {
     pub y: i32,
 }
 
+#[derive(Component, Debug)]
+pub struct Name {
+    pub name: String,
+}
+
 #[derive(Component)]
 pub struct Renderable {
     pub glyph: rltk::FontCharType,

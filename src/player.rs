@@ -25,14 +25,12 @@ pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
             viewshed.dirty = true;
         }
     }
-
-
 }
 
 pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
     // Player movement
     match ctx.key {
-        None => { return RunState::Paused} // Nothing happened
+        None => return RunState::Paused, // Nothing happened
         Some(key) => match key {
             VirtualKeyCode::Left | VirtualKeyCode::Numpad4 | VirtualKeyCode::H => {
                 try_move_player(-1, 0, &mut gs.ecs)
