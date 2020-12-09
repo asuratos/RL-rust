@@ -1,4 +1,4 @@
-use super::Rect;
+use super::{Rect, Room};
 use rltk::{Algorithm2D, BaseMap, Point, RandomNumberGenerator, Rltk, RGB};
 use specs::prelude::*;
 use std::cmp::{max, min};
@@ -144,12 +144,10 @@ impl Map {
         (y as usize * self.width as usize) + x as usize
     }
 
-    fn apply_room_to_map(&mut self, room: &Rect) {
-        for y in room.y1 + 1..=room.y2 {
-            for x in room.x1 + 1..=room.x2 {
-                let idx = self.xy_idx(x, y);
-                self.tiles[idx] = TileType::Floor;
-            }
+    fn apply_room_to_map(&mut self, room: &dyn Room) {
+        for (x, y) in room.spaces().iter() {
+            let idx = self.xy_idx(*x, *y);
+            self.tiles[idx] = TileType::Floor;
         }
     }
 

@@ -8,7 +8,7 @@ pub use map::*;
 mod player;
 use player::*;
 mod rect;
-pub use rect::Rect;
+pub use rect::{Rect, Room};
 mod visibility_system;
 use visibility_system::VisibilitySystem;
 mod monster_ai_system;
