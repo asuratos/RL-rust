@@ -22,6 +22,8 @@ impl<'a> System<'a> for VisibilitySystem {
                 viewshed.visible_tiles.clear();
                 viewshed.visible_tiles =
                     field_of_view(Point::new(pos.x, pos.y), viewshed.range, &*map);
+                // for some reason, fov does not return points with 0 coords
+                // this is out of my hands until I implement my own FoV
                 viewshed
                     .visible_tiles
                     .retain(|p| p.x >= 0 && p.x < map.width && p.y >= 0 && p.y < map.height);

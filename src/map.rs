@@ -1,8 +1,106 @@
 use super::Rect;
-use super::{Player, Viewshed};
 use rltk::{Algorithm2D, BaseMap, Point, RandomNumberGenerator, Rltk, RGB};
 use specs::prelude::*;
 use std::cmp::{max, min};
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// All border tiles should be of TileType::Wall
+    fn borders_check(map: Map) -> Result<(), String> {
+        // iterate over all border tiles (x == 0, x == width - 1,
+        // y == 0, y == height - 1)
+        let cond = map
+            .tiles
+            .iter()
+            .enumerate()
+            .filter(|&(pt, _)| {
+                (pt as i32) < map.width
+                    || (pt as i32) > (map.tiles.len() as i32) - map.width
+                    || (pt as i32) % map.width == 0
+                    || (pt as i32) % map.width == map.width - 1
+            })
+            .all(|(_, tile)| tile == &TileType::Wall);
+
+        if cond {
+            Ok(())
+        } else {
+            Err("Border has non-wall tile".to_string())
+        }
+    }
+
+    /// tests that all mapgen algorithms produce maps will
+    /// preserve all outer walls (borders)
+    #[test]
+    fn test_mapgen_algos_border() -> Result<(), String> {
+        let algo_list = [
+            Map::new,
+            Map::new_map_all_open,
+            Map::new_map_rooms_and_corridors,
+        ];
+
+        for algo in algo_list.iter() {
+            // tests with 30 randomly generated maps
+            for _ in 0..30 {
+                borders_check(algo())?;
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn borders_check_new() -> Result<(), String> {
+        let map = Map::new();
+        borders_check(map)?;
+        Ok(())
+    }
+
+    #[test]
+    fn borders_check_all_open() -> Result<(), String> {
+        let map = Map::new_map_all_open();
+        borders_check(map)?;
+        Ok(())
+    }
+
+    #[test]
+    #[ignore]
+    fn borders_check_corner_ul() {
+        let mut map = Map::new_map_all_open();
+        map.tiles[0] = TileType::Floor;
+
+        assert!(borders_check(map).is_err());
+    }
+
+    #[test]
+    #[ignore]
+    fn borders_check_corner_ur() {
+        let mut map = Map::new_map_all_open();
+        map.tiles[(map.width - 1) as usize] = TileType::Floor;
+
+        assert!(borders_check(map).is_err());
+    }
+
+    #[test]
+    #[ignore]
+    fn borders_check_corner_bl() {
+        let mut map = Map::new_map_all_open();
+        let len = map.tiles.len() as i32;
+        map.tiles[(len - map.width + 1) as usize] = TileType::Floor;
+
+        assert!(borders_check(map).is_err());
+    }
+
+    #[test]
+    #[ignore]
+    fn borders_check_corner_br() {
+        let mut map = Map::new_map_all_open();
+        let len = map.tiles.len() as i32;
+        map.tiles[(len - 1) as usize] = TileType::Floor;
+
+        assert!(borders_check(map).is_err());
+    }
+}
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum TileType {
@@ -20,6 +118,28 @@ pub struct Map {
 }
 
 impl Map {
+    fn new() -> Map {
+        Map {
+            tiles: vec![TileType::Wall; 80 * 50],
+            rooms: Vec::new(),
+            width: 80,
+            height: 50,
+            revealed_tiles: vec![false; 80 * 50],
+            visible_tiles: vec![false; 80 * 50],
+        }
+    }
+
+    fn new_with_dimensions(w: usize, h: usize) -> Map {
+        Map {
+            tiles: vec![TileType::Wall; w * h],
+            rooms: Vec::new(),
+            width: w as i32,
+            height: h as i32,
+            revealed_tiles: vec![false; w * h],
+            visible_tiles: vec![false; w * h],
+        }
+    }
+
     pub fn xy_idx(&self, x: i32, y: i32) -> usize {
         (y as usize * self.width as usize) + x as usize
     }
@@ -33,6 +153,8 @@ impl Map {
         }
     }
 
+    /// "Digs out" a horizontal corridor (changes Wall -> Floor)
+    /// given x1, x2, y
     fn apply_horizontal_tunnel(&mut self, x1: i32, x2: i32, y: i32) {
         for x in min(x1, x2)..=max(x1, x2) {
             let idx = self.xy_idx(x, y);
@@ -42,6 +164,8 @@ impl Map {
         }
     }
 
+    /// "Digs out" a vertical corridor (changes Wall -> Floor)
+    /// given y1, y2, x
     fn apply_vertical_tunnel(&mut self, y1: i32, y2: i32, x: i32) {
         for y in min(y1, y2)..=max(y1, y2) {
             let idx = self.xy_idx(x, y);
@@ -51,9 +175,7 @@ impl Map {
         }
     }
 
-    /// Makes a new map using the algorithm from http://rogueliketutorials.com/tutorials/tcod/part-3/
-    /// This gives a handful of random rooms and corridors joining them together.
-    pub fn new_map_rooms_and_corridors() -> Map {
+    pub fn new_map_all_open() -> Map {
         let mut map = Map {
             tiles: vec![TileType::Wall; 80 * 50],
             rooms: Vec::new(),
@@ -62,6 +184,19 @@ impl Map {
             revealed_tiles: vec![false; 80 * 50],
             visible_tiles: vec![false; 80 * 50],
         };
+
+        let new_room = Rect::new(0, 0, 78, 48);
+        map.apply_room_to_map(&new_room);
+        map.rooms.push(new_room);
+
+        map
+    }
+
+    /// Makes a new map using the algorithm from http://rogueliketutorials.com/tutorials/tcod/part-3/
+    /// This gives a handful of random rooms and corridors joining them together.
+    pub fn new_map_rooms_and_corridors() -> Map {
+        // base map
+        let mut map = Map::new_with_dimensions(80, 50);
 
         const MAX_ROOMS: i32 = 30;
         const MIN_SIZE: i32 = 6;
