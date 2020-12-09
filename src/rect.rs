@@ -2,12 +2,12 @@
 pub trait Room {
     /// Returns true if this overlaps with other
     fn intersect(&self, other: &dyn Room) -> bool {
-        let _own_spaces = self.spaces();
-        let _other_spaces = other.spaces();
+        let _own_spaces = self.spaces_and_walls();
+        let _other_spaces = other.spaces_and_walls();
 
         _own_spaces.iter()
             .filter(|x| _other_spaces.contains(x))
-            .count() == 0
+            .count() != 0
     }
 
     /// Returns a coordinate pair (x, y) of the center of the room
@@ -16,6 +16,8 @@ pub trait Room {
     /// Returns vector of coordinate pairs (x, y) of spaces that the room
     /// occupies
     fn spaces(&self) -> Vec<(i32, i32)>;
+
+    fn spaces_and_walls(&self) -> Vec<(i32,i32)>;
 }
 pub struct Rect {
     pub x1: i32,
@@ -48,5 +50,16 @@ impl Room for Rect {
             }
         }
         _spaces
+    }
+
+    fn spaces_and_walls(&self) -> Vec<(i32,i32)> {
+        let mut _spaces_and_walls = Vec::new();
+        for y in self.y1..=self.y2 {
+            for x in self.x1..=self.x2 {
+                _spaces_and_walls.push((x, y));
+            }
+        }
+        _spaces_and_walls
+        
     }
 }

@@ -211,7 +211,7 @@ impl Map {
             let mut ok = true;
             for other_room in map.rooms.iter() {
                 if new_room.intersect(other_room) {
-                    ok = false
+                    ok = false;
                 }
             }
             if ok {

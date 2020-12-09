@@ -80,8 +80,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Player>();
     gs.ecs.register::<Monster>();
 
-    // let map: Map = Map::new_map_rooms_and_corridors(true);
-    let map: Map = Map::new_map_all_open();
+    let map: Map = Map::new_map_rooms_and_corridors();
+    // let map: Map = Map::new_map_all_open();
     let (player_x, player_y) = map.rooms[0].center();
 
     let mut rng = rltk::RandomNumberGenerator::new();
