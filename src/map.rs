@@ -36,14 +36,14 @@ mod tests {
     fn test_mapgen_algos_border() -> Result<(), String> {
         let algo_list = [
             Map::new,
-            Map::new_map_all_open,
             Map::new_map_rooms_and_corridors,
+            Map::new_map_all_open,
         ];
 
         for algo in algo_list.iter() {
             // tests with 30 randomly generated maps
             for _ in 0..30 {
-                borders_check(algo())?;
+                borders_check(algo(0))?;
             }
         }
         Ok(())
@@ -51,14 +51,14 @@ mod tests {
 
     #[test]
     fn borders_check_new() -> Result<(), String> {
-        let map = Map::new();
+        let map = Map::new(0);
         borders_check(map)?;
         Ok(())
     }
 
     #[test]
     fn borders_check_all_open() -> Result<(), String> {
-        let map = Map::new_map_all_open();
+        let map = Map::new_map_all_open(0);
         borders_check(map)?;
         Ok(())
     }
@@ -66,7 +66,7 @@ mod tests {
     #[test]
     #[ignore]
     fn borders_check_corner_ul() {
-        let mut map = Map::new_map_all_open();
+        let mut map = Map::new_map_all_open(0);
         map.tiles[0] = TileType::Floor;
 
         assert!(borders_check(map).is_err());
@@ -75,7 +75,7 @@ mod tests {
     #[test]
     #[ignore]
     fn borders_check_corner_ur() {
-        let mut map = Map::new_map_all_open();
+        let mut map = Map::new_map_all_open(0);
         map.tiles[(map.width - 1) as usize] = TileType::Floor;
 
         assert!(borders_check(map).is_err());
@@ -84,7 +84,7 @@ mod tests {
     #[test]
     #[ignore]
     fn borders_check_corner_bl() {
-        let mut map = Map::new_map_all_open();
+        let mut map = Map::new_map_all_open(0);
         let len = map.tiles.len() as i32;
         map.tiles[(len - map.width + 1) as usize] = TileType::Floor;
 
@@ -94,7 +94,7 @@ mod tests {
     #[test]
     #[ignore]
     fn borders_check_corner_br() {
-        let mut map = Map::new_map_all_open();
+        let mut map = Map::new_map_all_open(0);
         let len = map.tiles.len() as i32;
         map.tiles[(len - 1) as usize] = TileType::Floor;
 
@@ -115,10 +115,11 @@ pub struct Map {
     pub height: i32,
     pub revealed_tiles: Vec<bool>,
     pub visible_tiles: Vec<bool>,
+    pub depth: i32,
 }
 
 impl Map {
-    fn new() -> Map {
+    fn new(new_depth: i32) -> Map {
         Map {
             tiles: vec![TileType::Wall; 80 * 50],
             rooms: Vec::new(),
@@ -126,10 +127,11 @@ impl Map {
             height: 50,
             revealed_tiles: vec![false; 80 * 50],
             visible_tiles: vec![false; 80 * 50],
+            depth: new_depth,
         }
     }
 
-    fn new_with_dimensions(w: usize, h: usize) -> Map {
+    fn new_with_dimensions(w: usize, h: usize, new_depth: i32) -> Map {
         Map {
             tiles: vec![TileType::Wall; w * h],
             rooms: Vec::new(),
@@ -137,6 +139,7 @@ impl Map {
             height: h as i32,
             revealed_tiles: vec![false; w * h],
             visible_tiles: vec![false; w * h],
+            depth: new_depth,
         }
     }
 
@@ -173,15 +176,9 @@ impl Map {
         }
     }
 
-    pub fn new_map_all_open() -> Map {
-        let mut map = Map {
-            tiles: vec![TileType::Wall; 80 * 50],
-            rooms: Vec::new(),
-            width: 80,
-            height: 50,
-            revealed_tiles: vec![false; 80 * 50],
-            visible_tiles: vec![false; 80 * 50],
-        };
+    pub fn new_map_all_open(new_depth: i32) -> Map {
+
+        let mut map = Map::new(new_depth);
 
         let new_room = Rect::new(0, 0, 78, 48);
         map.apply_room_to_map(&new_room);
@@ -192,9 +189,9 @@ impl Map {
 
     /// Makes a new map using the algorithm from http://rogueliketutorials.com/tutorials/tcod/part-3/
     /// This gives a handful of random rooms and corridors joining them together.
-    pub fn new_map_rooms_and_corridors() -> Map {
+    pub fn new_map_rooms_and_corridors(new_depth: i32) -> Map {
         // base map
-        let mut map = Map::new_with_dimensions(80, 50);
+        let mut map = Map::new_with_dimensions(80, 50, new_depth);
 
         const MAX_ROOMS: i32 = 30;
         const MIN_SIZE: i32 = 6;
